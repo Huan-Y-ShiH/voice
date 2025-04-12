@@ -1,0 +1,66 @@
+# 依赖目录
+node_modules/
+vendor/
+.venv/
+env/
+venv/
+
+# 构建输出目录
+dist/
+build/
+out/
+target/
+
+# 缓存目录
+.cache/
+.npm/
+.yarn/
+
+# IDE 和编辑器文件
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# 日志文件
+*.log
+logs/
+log/
+
+# 临时文件
+tmp/
+temp/
+*.tmp
+
+# 编译文件
+*.pyc
+*.class
+*.o
+*.so
+
+# 环境配置文件
+.env
+.env.local
+.env.*.local
+
+# 大型二进制文件
+*.zip
+*.tar.gz
+*.rar
+*.7z
+*.pdf
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.mp4
+*.mov
+
+# 数据库文件
+*.sqlite
+*.db
+
+# 测试覆盖率报告
+coverage/
+.coverage 
