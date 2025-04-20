@@ -27,7 +27,7 @@ function Login() {
 
     try {
       console.log('开始注册请求...');
-      const response = await fetch('https://www.srtp.site:37961/register', {
+      const response = await fetch('https://www.srtp.site/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

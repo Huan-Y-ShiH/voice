@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';  // 确保已安装 uuid
+import { textToSpeech as voiceRecorderTextToSpeech } from '../VoiceRecorder';
 
 let socket = null;
 let reconnectAttempts = 0;
@@ -8,7 +9,7 @@ const clientId = localStorage.getItem('clientId') || uuidv4();
 // 实现必要的功能函数
 const textToSpeech = (text) => {
   console.log('文字转语音:', text);
-  // TODO: 实现实际的文字转语音逻辑
+  voiceRecorderTextToSpeech(text);
 };
 
 const updateUI = (payload) => {

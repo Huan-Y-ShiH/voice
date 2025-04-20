@@ -179,7 +179,7 @@ const AutoListener = () => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
           mediaRecorderRef.current.stop();
         }
-      }, 2000); // 每5秒录制一段
+      }, 2000); // 每2秒录制一段
     }
   };
 
