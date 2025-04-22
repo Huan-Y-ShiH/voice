@@ -5,13 +5,15 @@ from datetime import datetime
 from typing import Dict
 import sqlite3
 from contextlib import contextmanager
+import os  # 确保导入 os 模块
+from pathlib import Path
 
 app = FastAPI()
 
 # CORS设置
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # 添加你的前端域名
+    allow_origins=["https://www.srtp.site", "https://srtp.site"],  # 允许前端域名
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -92,9 +94,9 @@ async def register_user(data: dict):
         username = data.get("username")
         if not username:
             raise HTTPException(status_code=400, detail="用户名不能为空")
-        
+
         print(f"尝试注册用户: {username}")
-        
+
         # 直接使用 sqlite3.connect 而不是 get_db
         conn = sqlite3.connect('users.db')
         try:
@@ -104,20 +106,20 @@ async def register_user(data: dict):
                 conn.close()
                 print(f"用户名 {username} 已存在")
                 raise HTTPException(status_code=400, detail="用户名已存在")
-            
+
             # 插入新用户
             conn.execute('INSERT INTO users (username) VALUES (?)', (username,))
             conn.commit()
             conn.close()
             print(f"用户 {username} 注册成功")
             return {"status": "success", "message": "注册成功"}
-            
+
         except Exception as e:
             conn.rollback()
             conn.close()
             print(f"数据库操作错误: {e}")
             raise HTTPException(status_code=500, detail=f"数据库错误: {str(e)}")
-            
+
     except HTTPException as e:
         raise e
     except Exception as e:
@@ -128,6 +130,12 @@ async def register_user(data: dict):
 # 修改初始化函数
 def init_db():
     print("开始初始化数据库...")
+    
+    # 删除旧的数据库文件
+    if os.path.exists('users.db'):
+        os.remove('users.db')
+        print("旧的数据库文件已删除")
+
     try:
         with sqlite3.connect('users.db') as conn:
             # 检查表是否存在
@@ -136,7 +144,7 @@ def init_db():
                 SELECT name FROM sqlite_master 
                 WHERE type='table' AND name='users'
             ''')
-            
+
             if not cursor.fetchone():
                 print("创建 users 表...")
                 conn.execute('''
@@ -150,9 +158,9 @@ def init_db():
                 print("数据库表创建成功")
             else:
                 print("users 表已存在")
-                
+
         print("数据库初始化完成")
-        
+
     except Exception as e:
         print(f"数据库初始化错误: {e}")
         raise
@@ -289,9 +297,23 @@ async def test_send(username: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# 在文件末尾添加
+# 在文件末尾的启动部分修改为以下内容：
 if __name__ == "__main__":
     init_db()  # 初始化数据库
     import uvicorn
 
-    uvicorn.run(app, host="0.0.0.0", port=37961)
+    # SSL证书路径（请替换为实际路径）
+    SSL_KEYFILE = "/etc/nginx/ssl/srtp.site.key"  # 私钥文件
+    SSL_CERTFILE = "/etc/nginx/ssl/srtp.site_bundle.pem"  # 证书文件
+
+    # 检查证书文件是否存在
+    if not Path(SSL_KEYFILE).exists() or not Path(SSL_CERTFILE).exists():
+        raise FileNotFoundError("SSL证书文件缺失！请检查路径")
+
+    uvicorn.run(
+        app,
+        host="0.0.0.0",
+        port=37961,
+        ssl_keyfile=SSL_KEYFILE,
+        ssl_certfile=SSL_CERTFILE
+    )

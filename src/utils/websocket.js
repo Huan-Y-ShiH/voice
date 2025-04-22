@@ -54,7 +54,8 @@ export const connectWebSocket = () => {
     return;
   }
 
-  socket = new WebSocket(`wss://www.srtp.site:37961/ws/${clientId}`);
+  // 改为通过 Nginx 代理连接（8080 端口）
+  socket = new WebSocket(`wss://www.srtp.site:8080/ws/${clientId}`);
 
   socket.onopen = () => {
     console.log('WebSocket连接已建立');
