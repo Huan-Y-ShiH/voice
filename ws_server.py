@@ -1,12 +1,14 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+import uvicorn
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 import json
 from datetime import datetime
 from typing import Dict
 import sqlite3
 from contextlib import contextmanager
-import os  # 确保导入 os 模块
+import os
 from pathlib import Path
+from pydantic import BaseModel
 
 app = FastAPI()
 
@@ -18,6 +20,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 定义请求体的数据模型
+class TranscriptionRequest(BaseModel):
+    text: str
+
+# 定义响应体的数据模型
+class TranscriptionResponse(BaseModel):
+    response: str
 
 # 用户存储
 users: Dict[str, str] = {}  # username -> client_id
@@ -65,26 +75,48 @@ class ConnectionManager:
 manager = ConnectionManager()
 
 
-# 修改数据库连接管理器
+# 优化后的数据库连接管理器
 @contextmanager
 def get_db():
-    conn = None
+    conn = sqlite3.connect('users.db')
+    conn.execute('PRAGMA foreign_keys = ON')
     try:
-        conn = sqlite3.connect('users.db')
-        # 启用外键约束
-        conn.execute('PRAGMA foreign_keys = ON')
         yield conn
-    except sqlite3.Error as e:
-        print(f"数据库连接错误: {e}")
-        if conn:
-            conn.rollback()
-        raise
     finally:
-        if conn:
-            try:
-                conn.close()
-            except Exception as e:
-                print(f"关闭数据库连接错误: {e}")
+        conn.close()  # 确保连接必被关闭
+
+
+# 示例函数，将文本转换为语音（您可以替换为自己的逻辑）
+def text_to_speech_simulation(text: str) -> str:
+    # 模拟的 TTS 逻辑，可以替换为实际的 TTS 实现
+    return f"Generated speech for: {text}"
+
+
+# 路由：接收文本并返回转换后的响应
+@app.post("/v1/audio/transcriptions", response_model=TranscriptionResponse)
+async def transcribe_audio(
+        request: TranscriptionRequest,
+        authorization: str = Header(...)  # 从请求头中获取 Authorization
+):
+    # 验证 Authorization 标头
+    if authorization != "Bearer sk-abcdef":
+        raise HTTPException(status_code=401, detail="Invalid or missing Authorization header")
+
+    # 打印接收到的请求体
+    print("Received text from client:", request.text)
+
+    # 模拟处理逻辑（如文本分析、生成语音等）
+    processed_response = text_to_speech_simulation(request.text)
+
+    # 返回结果
+    return {"response": processed_response}
+
+
+# 添加一个根路径的 GET 请求路由
+@app.get("/v1/audio/transcriptions")
+async def get_transcription_info():
+    # 返回示例信息或状态
+    return {"message": "This endpoint supports POST requests for transcription services. Use POST to submit text."}
 
 
 # 修改注册函数
@@ -130,7 +162,7 @@ async def register_user(data: dict):
 # 修改初始化函数
 def init_db():
     print("开始初始化数据库...")
-    
+
     # 删除旧的数据库文件
     if os.path.exists('users.db'):
         os.remove('users.db')
@@ -299,21 +331,10 @@ async def test_send(username: str):
 
 # 在文件末尾的启动部分修改为以下内容：
 if __name__ == "__main__":
-    init_db()  # 初始化数据库
-    import uvicorn
-
-    # SSL证书路径（请替换为实际路径）
-    SSL_KEYFILE = "/etc/nginx/ssl/srtp.site.key"  # 私钥文件
-    SSL_CERTFILE = "/etc/nginx/ssl/srtp.site_bundle.pem"  # 证书文件
-
-    # 检查证书文件是否存在
-    if not Path(SSL_KEYFILE).exists() or not Path(SSL_CERTFILE).exists():
-        raise FileNotFoundError("SSL证书文件缺失！请检查路径")
-
+    init_db()
     uvicorn.run(
         app,
         host="0.0.0.0",
         port=37961,
-        ssl_keyfile=SSL_KEYFILE,
-        ssl_certfile=SSL_CERTFILE
+        log_level="debug"  # 启用详细日志
     )
