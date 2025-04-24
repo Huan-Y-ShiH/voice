@@ -48,7 +48,7 @@ const VoiceRecorder = () => {
   // 与FastAPI接口通信
   const sendToFastAPI = async (text) => {
     try {
-      const response = await fetch('https://www.srtp.site:37961/v1/audio/transcriptions', {
+      const response = await fetch('https://www.srtp.site:8080/api/transcribe', {
         method: 'POST',
         headers: {
           'Authorization': 'Bearer sk-abcdef',
@@ -77,7 +77,7 @@ const VoiceRecorder = () => {
   const textToSpeech = async (text) => {
     try {
       setIsPlaying(true);
-      const response = await fetch('http://localhost:51234/proxy/tts', {
+      const response = await fetch('https://www.srtp.site:8080/api/tts', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'

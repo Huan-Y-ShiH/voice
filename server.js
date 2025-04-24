@@ -13,7 +13,7 @@ app.use(cors());
 app.use(express.json());
 
 // 代理 TTS 请求
-app.post('/proxy/tts', async (req, res) => {
+app.post('/api/tts', async (req, res) => {
   try {
     const response = await fetch('https://api.302.ai/v1/audio/speech', {
       method: 'POST',
