@@ -200,28 +200,26 @@ def init_db():
 
 @app.websocket("/ws/{client_id}")
 async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    print(f"新的WebSocket连接请求: {client_id}")
+    # 检查是否已有相同 client_id 的连接
+    old_conn = manager.active_connections.get(client_id)
+    if old_conn:
+        await manager.disconnect(client_id)  # 清理旧连接
+
     await manager.connect(websocket, client_id)
+    
     try:
         while True:
             data = await websocket.receive_json()
-            print(f"收到WebSocket消息: {data}")
+            print(f"收到消息: {data}")
             if data.get("type") == "register":
                 username = data.get("username")
                 if username:
-                    print(f"用户 {username} 注册WebSocket连接")
-                    # 先检查用户是否在数据库中
-                    with get_db() as conn:
-                        cursor = conn.execute('SELECT username FROM users WHERE username = ?', (username,))
-                        if cursor.fetchone():
-                            manager.associate_user(username, client_id)
-                            print(f"当前活跃用户: {users}")
-                        else:
-                            print(f"用户 {username} 不在数据库中")
+                    # 更新用户映射（允许重复注册）
+                    manager.associate_user(username, client_id)
     except WebSocketDisconnect:
-        print(f"WebSocket连接断开: {client_id}")
         manager.disconnect(client_id)
-
+        print(f"WebSocket连接断开: {client_id}")
+        
 
 @app.post("/send-instruction/{username}")
 async def send_instruction(username: str, message: dict):
@@ -336,5 +334,7 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",
         port=37961,
-        log_level="debug"  # 启用详细日志
+        log_level="debug" ， # 启用详细日志
+        ws_ping_interval=20,  # 添加心跳检测
+        ws_ping_timeout=20    # 添加超时设置
     )

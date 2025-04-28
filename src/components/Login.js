@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { onLoginSuccess } from '../utils/websocket.js';
 import './Login.css';
 
 function Login() {
@@ -46,7 +47,9 @@ function Login() {
 
       console.log('注册成功，保存用户名...');
       localStorage.setItem('username', username.trim());
+      onLoginSuccess();  // 调用websocket
       navigate('/');
+
     } catch (error) {
       console.error('注册失败:', error);
       if (error.message.includes('Failed to fetch')) {

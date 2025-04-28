@@ -1,7 +1,40 @@
 import React, { useState, useRef } from 'react';
 import './VoiceRecorder.css';
-
 import { Link } from 'react-router-dom';
+
+
+// 文字转语音
+export const textToSpeech = async (text,setIsPlaying) => {
+  try {
+    const response = await fetch('https://www.srtp.site:8080/api/tts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        text: text
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const blob = await response.blob();
+    const audioUrl = URL.createObjectURL(blob);
+    
+    const audio = new Audio(audioUrl);
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl);
+    };
+    
+    await audio.play();
+    
+  } catch (error) {
+    console.error("文字转语音错误:", error);
+    alert("语音转换失败，请重试");
+  }
+};
 
 
 const VoiceRecorder = () => {
@@ -11,7 +44,6 @@ const VoiceRecorder = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [inputText, setInputText] = useState('');
   const [transcriptionHistory, setTranscriptionHistory] = useState([]);
-  const [isPlaying, setIsPlaying] = useState(false);
   const _audioRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
@@ -73,42 +105,7 @@ const VoiceRecorder = () => {
     }
   };
 
-  // 文字转语音
-  const textToSpeech = async (text) => {
-    try {
-      setIsPlaying(true);
-      const response = await fetch('https://www.srtp.site:8080/api/tts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          text: text
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const audioUrl = URL.createObjectURL(blob);
-      
-      const audio = new Audio(audioUrl);
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-        setIsPlaying(false);
-      };
-      
-      await audio.play();
-      
-    } catch (error) {
-      console.error("文字转语音错误:", error);
-      alert("语音转换失败，请重试");
-      setIsPlaying(false);
-    }
-  };
-
+  
   // 开始录音
   const startRecording = async () => {
     try {
