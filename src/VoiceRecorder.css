@@ -104,7 +104,6 @@
   }
 }
 
-/* 添加音频播放状态指示器 */
 .audio-status {
   font-size: 0.8em;
   color: #888;
@@ -212,7 +211,6 @@ audio {
   100% { transform: scale(1); }
 }
 
-/* 添加文本输入表单样式 */
 .text-input-form {
   display: flex;
   gap: 10px;
@@ -261,14 +259,12 @@ audio {
   cursor: not-allowed;
 }
 
-/* 添加消息操作按钮容器样式 */
 .message-actions {
   display: flex;
   gap: 8px;
   align-items: center;
 }
 
-/* 下载按钮样式 */
 .download-button {
   background: none;
   border: none;
@@ -288,12 +284,6 @@ audio {
   cursor: not-allowed;
 }
 
-/* 调整消息内容布局 */
-.chat-message.assistant {
-  align-self: flex-start;
-}
-
-/* 确保按钮在移动设备上也容易点击 */
 .message-actions button {
   min-width: 32px;
   min-height: 32px;
@@ -316,10 +306,27 @@ audio {
   transition: background-color 0.3s;
 }
 
-
 .mode-switch-button:hover {
   background-color: #4CAF50;
   text-decoration: none;
   color: white;
 }
 
+/* 添加移动端样式 */
+@media (max-width: 768px) {
+  .controls, .send-button, .confirm-button, .mode-switch-button {
+    padding: 12px 24px;
+    font-size: 18px; /* 增大触摸目标 */
+  }
+
+  textarea, input {
+    font-size: 16px;
+  }
+}
+
+button {
+  min-width: 44px;
+  min-height: 44px; /* 符合移动端触摸最小尺寸 */
+  touch-action: manipulation; /* 优化触摸响应 */
+  -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
+}

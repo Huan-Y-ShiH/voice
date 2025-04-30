@@ -2,9 +2,8 @@ import React, { useState, useRef } from 'react';
 import './VoiceRecorder.css';
 import { Link } from 'react-router-dom';
 
-
 // 文字转语音
-export const textToSpeech = async (text,setIsPlaying) => {
+export const textToSpeech = async (text, setIsPlaying) => {
   try {
     const response = await fetch('https://www.srtp.site:8080/api/tts', {
       method: 'POST',
@@ -36,7 +35,6 @@ export const textToSpeech = async (text,setIsPlaying) => {
   }
 };
 
-
 const VoiceRecorder = () => {
   const [isRecording, setIsRecording] = useState(false);
   const [_audioUrl, setAudioUrl] = useState(null);
@@ -63,6 +61,7 @@ const VoiceRecorder = () => {
   const handleInputChange = (e) => {
     setInputText(e.target.value);
   };
+
   // 处理文本提交
   const handleTextSubmit = async (e) => {
     e.preventDefault();
@@ -95,22 +94,30 @@ const VoiceRecorder = () => {
 
       const result = await response.json();
       if (result && result.response) {
-
         // 使用FastAPI的响应进行文字转语音
         await textToSpeech(result.response);
-
       }
     } catch (error) {
       console.error("Error communicating with FastAPI:", error);
     }
   };
 
-  
-  // 开始录音
+  // 修改开始录音函数
   const startRecording = async () => {
     try {
+      // 添加移动端提示
+      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        alert("请点击允许麦克风权限");
+      }
+
       setTranscription('');
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        .catch(err => {
+          console.error("获取麦克风权限失败:", err);
+          alert("请允许麦克风权限以使用录音功能");
+          throw err;
+        });
+
       mediaRecorderRef.current = new MediaRecorder(stream);
       chunksRef.current = [];
 
@@ -120,18 +127,19 @@ const VoiceRecorder = () => {
         }
       };
 
-      mediaRecorderRef.current.onstop = () => {
+      mediaRecorderRef.current.onstop = async () => {
         const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
         const audioUrl = URL.createObjectURL(audioBlob);
         setAudioUrl(audioUrl);
-        uploadAudio(audioBlob);
+        await uploadAudio(audioBlob);
+        stream.getTracks().forEach(track => track.stop()); // 确保停止轨道
       };
 
       mediaRecorderRef.current.start();
       setIsRecording(true);
     } catch (error) {
-      console.error("Error starting recording:", error);
-      alert("无法访问麦克风，请确保已授予麦克风权限。");
+      console.error("开始录音失败:", error);
+      setIsRecording(false);
     }
   };
 
@@ -170,8 +178,6 @@ const VoiceRecorder = () => {
 
         // 将转录结果发送到FastAPI
         await sendToFastAPI(result.text);
-
-
       } else {
         throw new Error('No transcription in response');
       }
@@ -191,11 +197,11 @@ const VoiceRecorder = () => {
           value={inputText}
           onChange={handleInputChange}
           placeholder="输入文本转换为语音..."
-          disabled={isPlaying}
+          disabled={isLoading}
         />
         <button 
           type="submit" 
-          disabled={!inputText.trim() || isPlaying}
+          disabled={!inputText.trim() || isLoading}
           className="send-button"
         >
           发送
@@ -203,20 +209,27 @@ const VoiceRecorder = () => {
       </form>
 
       <div className="controls">
+        {/* 修改按钮渲染部分 */}
         <button 
-          onClick={isRecording ? stopRecording : startRecording}
+          onClick={(e) => {
+            e.preventDefault();
+            if (isRecording) stopRecording();
+            else startRecording();
+          }}
           className={isRecording ? 'recording' : ''}
-          disabled={isLoading || isPlaying}
+          disabled={isLoading}
+          style={{
+            minWidth: '44px',
+            minHeight: '44px',
+            touchAction: 'manipulation'
+          }}
         >
           {isRecording ? '停止录音' : '开始录音'}
         </button>
-        
 
         <Link to="/auto-listener" className="mode-switch-button">
           监听模式
         </Link>
-
-
       </div>
 
       {isLoading && (

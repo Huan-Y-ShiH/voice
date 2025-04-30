@@ -133,11 +133,22 @@ const AutoListener = () => {
     updateLevel();
   };
 
-  // 开始监听
+  // 修改开始监听函数
   const startListening = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const audioContext = new AudioContext();
+      // 添加移动端提示
+      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+        alert("请点击允许麦克风权限");
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+        .catch(err => {
+          console.error("获取麦克风权限失败:", err);
+          alert("请允许麦克风权限以使用监听功能");
+          throw err;
+        });
+
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const source = audioContext.createMediaStreamSource(stream);
       const analyser = audioContext.createAnalyser();
       analyser.fftSize = 256;
@@ -166,8 +177,8 @@ const AutoListener = () => {
       startNewRecording();
       setIsListening(true);
     } catch (error) {
-      console.error("Error starting listening:", error);
-      alert("无法访问麦克风，请确保已授予麦克风权限。");
+      console.error("开始监听失败:", error);
+      setIsListening(false);
     }
   };
 
@@ -237,9 +248,19 @@ const AutoListener = () => {
         {isListening ? '正在聆听...' : '已停止监听'}
       </div>
 
+      {/* 修改按钮渲染部分 */}
       <button 
         className={`listen-toggle ${isListening ? 'listening' : ''}`}
-        onClick={isListening ? stopListening : startListening}
+        onClick={(e) => {
+          e.preventDefault();
+          if (isListening) stopListening();
+          else startListening();
+        }}
+        style={{
+          minWidth: '44px',
+          minHeight: '44px',
+          touchAction: 'manipulation'
+        }}
       >
         {isListening ? '停止监听' : '开始监听'}
       </button>

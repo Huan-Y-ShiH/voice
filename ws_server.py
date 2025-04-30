@@ -86,12 +86,6 @@ def get_db():
         conn.close()  # 确保连接必被关闭
 
 
-# 示例函数，将文本转换为语音（您可以替换为自己的逻辑）
-def text_to_speech_simulation(text: str) -> str:
-    # 模拟的 TTS 逻辑，可以替换为实际的 TTS 实现
-    return f"Generated speech for: {text}"
-
-
 # 路由：接收文本并返回转换后的响应
 @app.post("/v1/audio/transcriptions", response_model=TranscriptionResponse)
 async def transcribe_audio(
@@ -103,13 +97,14 @@ async def transcribe_audio(
         raise HTTPException(status_code=401, detail="Invalid or missing Authorization header")
 
     # 打印接收到的请求体
-    print("Received text from client:", request.text)
+    print(f"收到来自客户端的文本: {request.text}")
+    print(f"请求时间: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
-    # 模拟处理逻辑（如文本分析、生成语音等）
-    processed_response = text_to_speech_simulation(request.text)
+    # 构造响应内容
+    response_text = f"已成功发送"
 
     # 返回结果
-    return {"response": processed_response}
+    return {"response": response_text}
 
 
 # 添加一个根路径的 GET 请求路由
