@@ -1,3 +1,55 @@
+* 新增浏览器不支持提示样式 */
+.browser-warning {
+  background-color: #f44336;
+  color: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.browser-warning p {
+  margin: 5px 0;
+}
+
+/* 增强录音按钮的触摸反馈 */
+.controls button {
+  min-width: 120px;
+  min-height: 50px;
+  font-size: 18px;
+  position: relative;
+  overflow: hidden;
+}
+
+.controls button:after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.5);
+  opacity: 0;
+  border-radius: 100%;
+  transform: scale(1, 1) translate(-50%);
+  transform-origin: 50% 50%;
+}
+
+.controls button:focus:not(:active)::after {
+  animation: ripple 1s ease-out;
+}
+
+@keyframes ripple {
+  0% {
+    transform: scale(0, 0);
+    opacity: 0.5;
+  }
+  100% {
+    transform: scale(20, 20);
+    opacity: 0;
+  }
+}
+
 .voice-recorder {
   padding: 20px;
   max-width: 800px;
@@ -104,6 +156,7 @@
   }
 }
 
+/* 添加音频播放状态指示器 */
 .audio-status {
   font-size: 0.8em;
   color: #888;
@@ -211,6 +264,7 @@ audio {
   100% { transform: scale(1); }
 }
 
+/* 添加文本输入表单样式 */
 .text-input-form {
   display: flex;
   gap: 10px;
@@ -259,12 +313,14 @@ audio {
   cursor: not-allowed;
 }
 
+/* 添加消息操作按钮容器样式 */
 .message-actions {
   display: flex;
   gap: 8px;
   align-items: center;
 }
 
+/* 下载按钮样式 */
 .download-button {
   background: none;
   border: none;
@@ -284,6 +340,12 @@ audio {
   cursor: not-allowed;
 }
 
+/* 调整消息内容布局 */
+.chat-message.assistant {
+  align-self: flex-start;
+}
+
+/* 确保按钮在移动设备上也容易点击 */
 .message-actions button {
   min-width: 32px;
   min-height: 32px;
@@ -306,27 +368,36 @@ audio {
   transition: background-color 0.3s;
 }
 
+
 .mode-switch-button:hover {
   background-color: #4CAF50;
   text-decoration: none;
   color: white;
 }
 
-/* 添加移动端样式 */
-@media (max-width: 768px) {
-  .controls, .send-button, .confirm-button, .mode-switch-button {
-    padding: 12px 24px;
-    font-size: 18px; /* 增大触摸目标 */
-  }
+/* 移动端触摸优化 */
+button {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
 
-  textarea, input {
-    font-size: 16px;
+/* 解决iOS点击延迟 */
+@media (-webkit-touch-callout: none) {
+  button, a {
+    -webkit-user-select: none;
+    user-select: none;
   }
 }
 
-button {
+/* UC浏览器按钮样式修复 */
+@supports (-webkit-touch-callout: none) {
+  .controls button {
+    padding: 12px 24px;
+  }
+}
+
+/* 录音按钮触摸区域扩大 */
+.controls button {
   min-width: 44px;
-  min-height: 44px; /* 符合移动端触摸最小尺寸 */
-  touch-action: manipulation; /* 优化触摸响应 */
-  -webkit-tap-highlight-color: transparent; /* 移除点击高亮 */
+  min-height: 44px;
 }
