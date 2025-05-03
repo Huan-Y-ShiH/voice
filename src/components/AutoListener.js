@@ -5,15 +5,65 @@ import { Link } from 'react-router-dom';
 const AutoListener = () => {
   const [isListening, setIsListening] = useState(false);
   const [audioLevel, setAudioLevel] = useState(0);
-  const [_transcription, setTranscription] = useState('');
-  const [_isLoading, setIsLoading] = useState(false);
+  const [transcription, setTranscription] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [transcriptionHistory, setTranscriptionHistory] = useState([]);
-  const [_isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [browserSupport, setBrowserSupport] = useState(true);
   
   const mediaRecorderRef = useRef(null);
   const chunksRef = useRef([]);
-  const analyserRef = useRef(null);
+  const streamRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+  // 增强版浏览器兼容性检查
+  useEffect(() => {
+    const checkCompatibility = async () => {
+      try {
+        const isSupported = (
+          navigator.mediaDevices && 
+          (window.MediaRecorder || window.webkitMediaRecorder) &&
+          typeof (window.MediaRecorder || window.webkitMediaRecorder) === 'function'
+        );
+        
+        // 实际测试MediaRecorder功能
+        if (isSupported) {
+          const testStream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
+          if (testStream) {
+            try {
+              const Recorder = window.MediaRecorder || window.webkitMediaRecorder;
+              const testRecorder = new Recorder(testStream);
+              if (typeof testRecorder.start !== 'function') {
+                throw new Error('MediaRecorder API not functional');
+              }
+              testRecorder.start();
+              testRecorder.stop();
+              testStream.getTracks().forEach(track => track.stop());
+            } catch (e) {
+              console.error('MediaRecorder test failed:', e);
+              throw e;
+            }
+          }
+        }
+        
+        setBrowserSupport(isSupported);
+        
+        if (!isSupported) {
+          alert('您的浏览器不支持监听功能，请使用最新版Chrome/Edge/Safari浏览器');
+        }
+      } catch (error) {
+        console.error('兼容性检查出错:', error);
+        setBrowserSupport(false);
+      }
+    };
+    
+    checkCompatibility();
+    
+    return () => {
+      stopListening();
+    };
+  }, []);
 
   // 添加转录结果到历史记录
   const addToHistory = (text, type = 'user') => {
@@ -26,9 +76,9 @@ const AutoListener = () => {
     setTranscriptionHistory(prev => [...prev, newEntry]);
   };
 
+
   // 发送转录结果到FastAPI
   const sendToFastAPI = async (text) => {
-    console.log("Sending to FastAPI:", text);
     try {
       const response = await fetch('https://www.srtp.site:8080/api/transcribe', {
         method: 'POST',
@@ -44,45 +94,11 @@ const AutoListener = () => {
       }
 
       const result = await response.json();
-      console.log("FastAPI response:", result);
       if (result && result.response) {
-        await textToSpeech(result.response);
         addToHistory(result.response, 'assistant');
       }
     } catch (error) {
       console.error("Error communicating with FastAPI:", error);
-    }
-  };
-
-  // 文字转语音
-  const textToSpeech = async (text) => {
-    try {
-      setIsPlaying(true);
-      const response = await fetch('https://www.srtp.site:8080/api/tts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ text })
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const blob = await response.blob();
-      const audioUrl = URL.createObjectURL(blob);
-      
-      const audio = new Audio(audioUrl);
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-        setIsPlaying(false);
-      };
-      
-      await audio.play();
-    } catch (error) {
-      console.error("文字转语音错误:", error);
-      setIsPlaying(false);
     }
   };
 
@@ -119,43 +135,58 @@ const AutoListener = () => {
     }
   };
 
-  // 更新音量显示
-  const updateAudioLevel = (analyser) => {
-    const dataArray = new Uint8Array(analyser.frequencyBinCount);
-    
-    const updateLevel = () => {
-      analyser.getByteFrequencyData(dataArray);
-      const average = dataArray.reduce((acc, val) => acc + val, 0) / dataArray.length;
-      setAudioLevel(average);
-      animationFrameRef.current = requestAnimationFrame(updateLevel);
-    };
-    
-    updateLevel();
-  };
-
-  // 修改开始监听函数
+  // 开始监听
   const startListening = async () => {
+    if (!browserSupport) return;
+
     try {
-      // 添加移动端提示
-      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      // 移动端提示
+      if (isMobile) {
         alert("请点击允许麦克风权限");
       }
 
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-        .catch(err => {
-          console.error("获取麦克风权限失败:", err);
-          alert("请允许麦克风权限以使用监听功能");
-          throw err;
-        });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          sampleRate: isMobile ? 16000 : 44100,
+          channelCount: 1,
+          echoCancellation: true,
+          noiseSuppression: true
+        }
+      }).catch(err => {
+        console.error("获取麦克风权限失败:", err);
+        alert("请允许麦克风权限以使用监听功能");
+        throw err;
+      });
 
-      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const source = audioContext.createMediaStreamSource(stream);
-      const analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      source.connect(analyser);
-      analyserRef.current = analyser;
+      // 清理之前的资源
+      if (mediaRecorderRef.current?.state === 'recording') {
+        mediaRecorderRef.current.stop();
+      }
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
 
-      mediaRecorderRef.current = new MediaRecorder(stream);
+      streamRef.current = stream;
+
+      // 兼容的MIME类型检测
+      const getSupportedMimeType = () => {
+        const types = [
+          'audio/webm;codecs=opus',
+          'audio/webm',
+          'audio/mp4',
+          'audio/wav',
+          'audio/x-wav',
+          ''
+        ];
+        return types.find(type => !type || MediaRecorder.isTypeSupported(type));
+      };
+
+      const mimeType = getSupportedMimeType();
+      const options = mimeType ? { mimeType } : {};
+
+      // 创建录音器实例
+      const Recorder = window.MediaRecorder || window.webkitMediaRecorder;
+      mediaRecorderRef.current = new Recorder(stream, options);
       chunksRef.current = [];
 
       mediaRecorderRef.current.ondataavailable = (event) => {
@@ -165,7 +196,7 @@ const AutoListener = () => {
       };
 
       mediaRecorderRef.current.onstop = () => {
-        const audioBlob = new Blob(chunksRef.current, { type: 'audio/wav' });
+        const audioBlob = new Blob(chunksRef.current, { type: mediaRecorderRef.current.mimeType || 'audio/wav' });
         uploadAudio(audioBlob);
         chunksRef.current = [];
         if (isListening) {
@@ -173,7 +204,12 @@ const AutoListener = () => {
         }
       };
 
-      updateAudioLevel(analyser);
+      mediaRecorderRef.current.onerror = (e) => {
+        console.error('录音器错误:', e.error);
+        alert(`录音出错: ${e.error?.message || '未知错误'}`);
+        stopListening();
+      };
+
       startNewRecording();
       setIsListening(true);
     } catch (error) {
@@ -209,28 +245,25 @@ const AutoListener = () => {
     setAudioLevel(0);
   };
 
-  // 组件挂载时自动开始监听，卸载时清理资源
-  useEffect(() => {
-    startListening();
-    
-    return () => {
-      // 在组件卸载时安全地停止录音
-      if (mediaRecorderRef.current) {
-        // 检查状态是否为 'recording'
-        if (mediaRecorderRef.current.state === 'recording') {
-          mediaRecorderRef.current.stop();
-        }
-        // 停止所有音轨
-        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-      }
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
-  }, []);
+  // 切换监听状态
+  const toggleListening = (e) => {
+    e.preventDefault();
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
 
   return (
     <div className="auto-listener">
+      {!browserSupport && (
+        <div className="browser-warning">
+          <p>⚠️ 您的浏览器不支持监听功能</p>
+          <p>请使用最新版Chrome/Edge/Safari浏览器</p>
+        </div>
+      )}
+
       <div className="header">
         <Link to="/" className="back-button">
           返回主页
@@ -248,14 +281,10 @@ const AutoListener = () => {
         {isListening ? '正在聆听...' : '已停止监听'}
       </div>
 
-      {/* 修改按钮渲染部分 */}
       <button 
         className={`listen-toggle ${isListening ? 'listening' : ''}`}
-        onClick={(e) => {
-          e.preventDefault();
-          if (isListening) stopListening();
-          else startListening();
-        }}
+        onClick={toggleListening}
+        disabled={isLoading || !browserSupport}
         style={{
           minWidth: '44px',
           minHeight: '44px',
@@ -264,6 +293,7 @@ const AutoListener = () => {
       >
         {isListening ? '停止监听' : '开始监听'}
       </button>
+
       <div className="chat-history-container">
         <div className="chat-history">
           {transcriptionHistory.map((entry) => (
@@ -276,6 +306,12 @@ const AutoListener = () => {
           ))}
         </div>
       </div>
+
+      {isLoading && (
+        <div className="loading">
+          正在处理中...
+        </div>
+      )}
     </div>
   );
 };
