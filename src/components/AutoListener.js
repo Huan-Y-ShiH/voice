@@ -15,9 +15,11 @@ const AutoListener = () => {
   const chunksRef = useRef([]);
   const streamRef = useRef(null);
   const animationFrameRef = useRef(null);
+  const uploadQueue = useRef([]);
+  const isUploading = useRef(false);
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-  // 增强版浏览器兼容性检查
+  // 浏览器兼容性检查
   useEffect(() => {
     const checkCompatibility = async () => {
       try {
@@ -27,7 +29,6 @@ const AutoListener = () => {
           typeof (window.MediaRecorder || window.webkitMediaRecorder) === 'function'
         );
         
-        // 实际测试MediaRecorder功能
         if (isSupported) {
           const testStream = await navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => null);
           if (testStream) {
@@ -76,7 +77,6 @@ const AutoListener = () => {
     setTranscriptionHistory(prev => [...prev, newEntry]);
   };
 
-
   // 发送转录结果到FastAPI
   const sendToFastAPI = async (text) => {
     try {
@@ -102,37 +102,46 @@ const AutoListener = () => {
     }
   };
 
-  // 上传音频并请求转录
+  // 上传音频并请求转录（带队列管理）
   const uploadAudio = async (audioBlob) => {
+    uploadQueue.current.push(audioBlob);
+    if (isUploading.current) return;
+
     setIsLoading(true);
-    const formData = new FormData();
-    formData.append("model", "FunAudioLLM/SenseVoiceSmall");
-    formData.append("file", audioBlob, "recording.wav");
+    isUploading.current = true;
 
-    try {
-      const response = await fetch('https://api.siliconflow.cn/v1/audio/transcriptions', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer sk-fbvnyezvojrfaypxcnrqsmwyxpmvfkpnlelhmprqzdzeawci'
-        },
-        body: formData
-      });
+    while (uploadQueue.current.length > 0) {
+      const blob = uploadQueue.current.shift();
+      try {
+        const formData = new FormData();
+        formData.append("model", "FunAudioLLM/SenseVoiceSmall");
+        formData.append("file", blob, "recording.wav");
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const response = await fetch('https://api.siliconflow.cn/v1/audio/transcriptions', {
+          method: 'POST',
+          headers: {
+            'Authorization': 'Bearer sk-fbvnyezvojrfaypxcnrqsmwyxpmvfkpnlelhmprqzdzeawci'
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const result = await response.json();
+        if (result && result.text) {
+          setTranscription(result.text);
+          addToHistory(result.text, 'user');
+          await sendToFastAPI(result.text);
+        }
+      } catch (error) {
+        console.error("Error uploading audio:", error);
       }
-
-      const result = await response.json();
-      if (result && result.text) {
-        setTranscription(result.text);
-        addToHistory(result.text, 'user');
-        await sendToFastAPI(result.text);
-      }
-    } catch (error) {
-      console.error("Error uploading audio:", error);
-    } finally {
-      setIsLoading(false);
     }
+
+    isUploading.current = false;
+    setIsLoading(false);
   };
 
   // 开始监听
@@ -140,7 +149,6 @@ const AutoListener = () => {
     if (!browserSupport) return;
 
     try {
-      // 移动端提示
       if (isMobile) {
         alert("请点击允许麦克风权限");
       }
@@ -197,11 +205,17 @@ const AutoListener = () => {
 
       mediaRecorderRef.current.onstop = () => {
         const audioBlob = new Blob(chunksRef.current, { type: mediaRecorderRef.current.mimeType || 'audio/wav' });
-        uploadAudio(audioBlob);
         chunksRef.current = [];
+        
+        // 立即开始新录音
         if (isListening) {
           startNewRecording();
         }
+        
+        // 异步上传
+        uploadAudio(audioBlob).catch(error => {
+          console.error("Upload failed:", error);
+        });
       };
 
       mediaRecorderRef.current.onerror = (e) => {
@@ -210,6 +224,30 @@ const AutoListener = () => {
         stopListening();
       };
 
+      // 开始音频分析
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const analyser = audioContext.createAnalyser();
+      const microphone = audioContext.createMediaStreamSource(stream);
+      microphone.connect(analyser);
+      analyser.fftSize = 256;
+
+      const bufferLength = analyser.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+
+      const updateAudioLevel = () => {
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < bufferLength; i++) {
+          sum += dataArray[i];
+        }
+        const average = sum / bufferLength;
+        setAudioLevel(average);
+        animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
+      };
+
+      animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
+
+      // 开始第一次录音
       startNewRecording();
       setIsListening(true);
     } catch (error) {
@@ -218,7 +256,7 @@ const AutoListener = () => {
     }
   };
 
-  // 开始新的录音片段
+  // 开始新的4秒录音片段
   const startNewRecording = () => {
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'recording') {
       mediaRecorderRef.current.start();
@@ -226,7 +264,7 @@ const AutoListener = () => {
         if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
           mediaRecorderRef.current.stop();
         }
-      }, 2000); // 每2秒录制一段
+      }, 4000); // 4秒录音片段
     }
   };
 

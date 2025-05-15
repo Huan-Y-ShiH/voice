@@ -1,24 +1,26 @@
-* 新增浏览器不支持提示样式 */
+/* 浏览器不支持提示样式 */
 .browser-warning {
   background-color: #f44336;
   color: white;
-  padding: 15px;
+  padding: 12px 15px;
   border-radius: 8px;
-  margin: 20px 0;
+  margin: 15px 0;
   text-align: center;
+  font-size: clamp(14px, 3vw, 16px);
 }
 
 .browser-warning p {
-  margin: 5px 0;
+  margin: 6px 0;
 }
 
 /* 增强录音按钮的触摸反馈 */
 .controls button {
-  min-width: 120px;
-  min-height: 50px;
-  font-size: 18px;
+  min-width: 44px;
+  min-height: 44px;
+  font-size: clamp(16px, 4vw, 18px);
   position: relative;
   overflow: hidden;
+  padding: 12px 20px;
 }
 
 .controls button:after {
@@ -51,12 +53,12 @@
 }
 
 .voice-recorder {
-  padding: 20px;
+  padding: 15px;
   max-width: 800px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  height: calc(100vh - 100px);
+  height: calc(100vh - 80px);
 }
 
 .controls {
@@ -64,28 +66,30 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  margin: 20px 0;
+  margin: 15px 0;
   padding: 10px;
   background-color: #2a2a2a;
   position: sticky;
   top: 0;
   z-index: 1;
+  border-radius: 12px;
 }
 
 .chat-history {
   flex: 1;
   overflow-y: auto;
-  padding: 20px;
+  padding: 15px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
+  gap: 12px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .chat-message {
   display: flex;
   align-items: flex-start;
   gap: 10px;
-  max-width: 80%;
+  max-width: 85%;
   animation: fadeIn 0.3s ease-in;
 }
 
@@ -99,9 +103,10 @@
 
 .message-content {
   background-color: #333;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-radius: 12px;
   position: relative;
+  word-break: break-word;
 }
 
 .chat-message.user .message-content {
@@ -116,13 +121,14 @@
   margin: 0;
   color: #ffffff;
   line-height: 1.4;
+  font-size: clamp(14px, 3vw, 16px);
 }
 
 .timestamp {
-  font-size: 0.75em;
-  color: #888;
+  font-size: 0.7em;
+  color: rgba(255, 255, 255, 0.7);
   display: block;
-  margin-top: 5px;
+  margin-top: 4px;
 }
 
 .replay-button {
@@ -130,14 +136,15 @@
   border: none;
   color: #4CAF50;
   cursor: pointer;
-  font-size: 1.2em;
+  font-size: 1.1em;
   padding: 5px;
   transition: transform 0.2s;
-  position: relative;
+  min-width: 32px;
+  min-height: 32px;
 }
 
 .replay-button:hover {
-  transform: scale(1.2);
+  transform: scale(1.1);
 }
 
 .replay-button.playing {
@@ -156,18 +163,17 @@
   }
 }
 
-/* 添加音频播放状态指示器 */
 .audio-status {
-  font-size: 0.8em;
-  color: #888;
-  margin-left: 8px;
+  font-size: 0.75em;
+  color: rgba(255, 255, 255, 0.6);
+  margin-left: 6px;
 }
 
 .transcription {
   position: sticky;
   bottom: 0;
   background-color: #2a2a2a;
-  padding: 15px;
+  padding: 12px;
   border-top: 1px solid #444;
 }
 
@@ -175,27 +181,29 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
 }
 
 .transcription-text {
   flex: 1;
   background-color: #333;
-  padding: 12px;
+  padding: 10px 12px;
   border-radius: 12px;
+  font-size: clamp(14px, 3vw, 16px);
 }
 
 .confirm-button {
-  padding: 8px 16px;
+  padding: 8px 14px;
   background-color: #4CAF50;
   border-radius: 20px;
-  min-width: 80px;
+  min-width: 70px;
+  font-size: clamp(14px, 3vw, 16px);
 }
 
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -204,23 +212,23 @@
 }
 
 button {
-  padding: 12px 24px;
-  font-size: 16px;
-  border-radius: 25px;
+  padding: 10px 20px;
+  font-size: clamp(14px, 3vw, 16px);
+  border-radius: 22px;
   border: none;
   background-color: #4CAF50;
   color: white;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 button:hover {
   background-color: #45a049;
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 button:disabled {
-  background-color: #cccccc;
+  background-color: #666;
   cursor: not-allowed;
 }
 
@@ -230,14 +238,15 @@ button.recording {
 }
 
 .loading {
-  margin: 10px 0;
+  margin: 8px 0;
   color: #4CAF50;
   text-align: center;
+  font-size: clamp(14px, 3vw, 16px);
 }
 
 .audio-player, .transcription {
-  margin: 20px 0;
-  padding: 15px;
+  margin: 15px 0;
+  padding: 12px;
   border-radius: 8px;
   background-color: #333;
 }
@@ -245,43 +254,43 @@ button.recording {
 .transcription h3 {
   color: #4CAF50;
   margin-top: 0;
+  font-size: clamp(16px, 3.5vw, 18px);
 }
 
 .transcription p {
   color: #ffffff;
-  margin: 10px 0;
-  line-height: 1.5;
+  margin: 8px 0;
+  line-height: 1.4;
 }
 
 audio {
   width: 100%;
-  margin: 10px 0;
+  margin: 8px 0;
 }
 
 @keyframes pulse {
   0% { transform: scale(1); }
-  50% { transform: scale(1.05); }
+  50% { transform: scale(1.03); }
   100% { transform: scale(1); }
 }
 
-/* 添加文本输入表单样式 */
 .text-input-form {
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-  padding: 15px;
+  gap: 8px;
+  margin-bottom: 15px;
+  padding: 12px;
   background-color: #333;
   border-radius: 12px;
 }
 
 .text-input-form input {
   flex: 1;
-  padding: 12px;
+  padding: 10px 12px;
   border: none;
   border-radius: 8px;
   background-color: #444;
   color: white;
-  font-size: 16px;
+  font-size: clamp(14px, 3vw, 16px);
 }
 
 .text-input-form input:focus {
@@ -294,18 +303,18 @@ audio {
 }
 
 .send-button {
-  padding: 12px 24px;
+  padding: 10px 20px;
   background-color: #4CAF50;
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  font-size: clamp(14px, 3vw, 16px);
 }
 
 .send-button:hover:not(:disabled) {
   background-color: #45a049;
-  transform: scale(1.05);
+  transform: scale(1.03);
 }
 
 .send-button:disabled {
@@ -313,26 +322,26 @@ audio {
   cursor: not-allowed;
 }
 
-/* 添加消息操作按钮容器样式 */
 .message-actions {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
 }
 
-/* 下载按钮样式 */
 .download-button {
   background: none;
   border: none;
   color: #4CAF50;
   cursor: pointer;
-  font-size: 1.2em;
+  font-size: 1.1em;
   padding: 5px;
   transition: transform 0.2s;
+  min-width: 32px;
+  min-height: 32px;
 }
 
 .download-button:hover {
-  transform: scale(1.2);
+  transform: scale(1.1);
 }
 
 .download-button:disabled {
@@ -340,12 +349,10 @@ audio {
   cursor: not-allowed;
 }
 
-/* 调整消息内容布局 */
 .chat-message.assistant {
   align-self: flex-start;
 }
 
-/* 确保按钮在移动设备上也容易点击 */
 .message-actions button {
   min-width: 32px;
   min-height: 32px;
@@ -356,32 +363,27 @@ audio {
 
 .mode-switch-button {
   display: inline-block;
-  margin-left: 10px;
-  padding: 10px 20px;
+  margin-left: 8px;
+  padding: 8px 16px;
   border: none;
   border-radius: 20px;
   background-color: #4CAF50;
   color: white;
   text-decoration: none;
-  font-size: 1em;
+  font-size: clamp(14px, 3vw, 16px);
   cursor: pointer;
-  transition: background-color 0.3s;
 }
-
 
 .mode-switch-button:hover {
   background-color: #4CAF50;
-  text-decoration: none;
-  color: white;
 }
 
-/* 移动端触摸优化 */
+/* 触摸优化 */
 button {
   -webkit-tap-highlight-color: transparent;
   touch-action: manipulation;
 }
 
-/* 解决iOS点击延迟 */
 @media (-webkit-touch-callout: none) {
   button, a {
     -webkit-user-select: none;
@@ -389,15 +391,28 @@ button {
   }
 }
 
-/* UC浏览器按钮样式修复 */
-@supports (-webkit-touch-callout: none) {
-  .controls button {
-    padding: 12px 24px;
+/* 响应式调整 */
+@media (max-width: 600px) {
+  .voice-recorder {
+    padding: 10px;
+    height: calc(100vh - 70px);
   }
-}
-
-/* 录音按钮触摸区域扩大 */
-.controls button {
-  min-width: 44px;
-  min-height: 44px;
+  
+  .controls {
+    margin: 10px 0;
+    padding: 8px;
+  }
+  
+  .chat-history {
+    padding: 10px;
+    gap: 10px;
+  }
+  
+  .message-content {
+    padding: 8px 12px;
+  }
+  
+  .transcription {
+    padding: 10px;
+  }
 }

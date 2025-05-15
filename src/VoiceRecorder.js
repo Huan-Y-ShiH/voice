@@ -243,8 +243,8 @@ const VoiceRecorder = () => {
     if (!inputText.trim()) return;
 
     const text = inputText.trim();
-    addToHistory(text, 'assistant');
-    await textToSpeech(text);
+    addToHistory(text, 'user');
+    await sendToFastAPI(text);
     setInputText('');
   };
 
