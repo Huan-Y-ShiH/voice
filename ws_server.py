@@ -309,19 +309,6 @@ async def update_user(username: str, new_data: dict):
     return {"status": "success", "message": f"User {username} updated"}
 
 
-# 添加测试路由
-@app.get("/test-send/{username}")
-async def test_send(username: str):
-    """测试发送消息的路由"""
-    try:
-        message = {
-            "content": f"这是发送给 {username} 的测试语音指令"
-        }
-        return await send_instruction(username, message)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
 # 在文件末尾的启动部分修改为以下内容：
 if __name__ == "__main__":
     init_db()
@@ -329,7 +316,7 @@ if __name__ == "__main__":
         app,
         host="0.0.0.0",
         port=37961,
-        log_level="debug" ， # 启用详细日志
+        log_level="debug" ，  # 启用详细日志
         ws_ping_interval=20,  # 添加心跳检测
         ws_ping_timeout=20    # 添加超时设置
     )
