@@ -8,7 +8,6 @@ const AutoListener = () => {
   const [transcription, setTranscription] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [transcriptionHistory, setTranscriptionHistory] = useState([]);
-  const [isPlaying, setIsPlaying] = useState(false);
   const [browserSupport, setBrowserSupport] = useState(true);
   
   const mediaRecorderRef = useRef(null);
@@ -17,6 +16,7 @@ const AutoListener = () => {
   const animationFrameRef = useRef(null);
   const uploadQueue = useRef([]);
   const isUploading = useRef(false);
+  const shouldContinueRecording = useRef(false); // 新增控制变量
   const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
   // 浏览器兼容性检查
@@ -207,8 +207,8 @@ const AutoListener = () => {
         const audioBlob = new Blob(chunksRef.current, { type: mediaRecorderRef.current.mimeType || 'audio/wav' });
         chunksRef.current = [];
         
-        // 立即开始新录音
-        if (isListening) {
+        // 立即开始新录音（不依赖状态）
+        if (shouldContinueRecording.current) {
           startNewRecording();
         }
         
@@ -247,7 +247,8 @@ const AutoListener = () => {
 
       animationFrameRef.current = requestAnimationFrame(updateAudioLevel);
 
-      // 开始第一次录音
+      // 启动录音流程
+      shouldContinueRecording.current = true;
       startNewRecording();
       setIsListening(true);
     } catch (error) {
@@ -258,18 +259,26 @@ const AutoListener = () => {
 
   // 开始新的4秒录音片段
   const startNewRecording = () => {
-    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'recording') {
-      mediaRecorderRef.current.start();
-      setTimeout(() => {
-        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
-          mediaRecorderRef.current.stop();
-        }
-      }, 4000); // 4秒录音片段
+    if (!shouldContinueRecording.current) return;
+    
+    try {
+      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'recording') {
+        mediaRecorderRef.current.start();
+        setTimeout(() => {
+          if (mediaRecorderRef.current?.state === 'recording') {
+            mediaRecorderRef.current.stop();
+          }
+        }, 4000);
+      }
+    } catch (error) {
+      console.error('启动录音失败:', error);
+      stopListening();
     }
   };
 
   // 停止监听
   const stopListening = () => {
+    shouldContinueRecording.current = false;
     if (mediaRecorderRef.current) {
       if (mediaRecorderRef.current.state === 'recording') {
         mediaRecorderRef.current.stop();

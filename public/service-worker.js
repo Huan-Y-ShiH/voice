@@ -16,7 +16,6 @@ precacheAndRoute(self.__WB_MANIFEST);
 
 self.addEventListener('install', (event) => {
   // Caching specific resources during the install phase
-  self.skipWaiting();  // 强制激活新 Service Worker
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(urlsToCache);
