@@ -1,0 +1,26 @@
+cmake_minimum_required(VERSION 3.23)
+project(TestApp)
+
+# 设置 C++ 标准
+set(CMAKE_CXX_STANDARD 17)
+
+# 先声明可执行文件
+add_executable(test_program test.cpp)
+
+# 再链接库和配置后处理
+target_link_libraries(test_program 
+    ${CMAKE_CURRENT_SOURCE_DIR}/HPSocket.lib
+    ${CMAKE_CURRENT_SOURCE_DIR}/msc_x64.lib
+)
+
+# 复制 DLL
+add_custom_command(TARGET test_program POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy 
+        "${CMAKE_CURRENT_SOURCE_DIR}/Inline_SDK_ALL_API_X64.dll"
+        $<TARGET_FILE_DIR:test_program>
+)
+
+# 设置输出目录（可选）
+set_target_properties(test_program PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)

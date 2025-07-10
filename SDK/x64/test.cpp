@@ -3,6 +3,12 @@
 
 #include <iostream>
 #include <Windows.h>
+// 设置控制台编码为UTF-8
+void initConsole() {
+    SetConsoleOutputCP(CP_UTF8);
+    std::wcout.imbue(std::locale("zh_CN.UTF-8"));
+}
+
 using namespace std;
 
 #define TCP_SERVER_PORT 12680

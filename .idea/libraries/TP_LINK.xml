@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="TP-LINK物联">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/TP-LINK物联.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
