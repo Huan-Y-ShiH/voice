@@ -216,6 +216,10 @@ async def websocket_endpoint(websocket: WebSocket, client_id: str):
         print(f"WebSocket连接断开: {client_id}")
         
 
+# curl -X POST https://www.srtp.site:8080/api/send-instruction/huanyin \
+    # -H "Content-Type: application/json" \
+    # -d '{"content": "这是一个语音和文字互相转换的项目，目前还在开发"}'
+
 @app.post("/send-instruction/{username}")
 async def send_instruction(username: str, message: dict):
     print(f"尝试发送消息给用户 {username}: {message}")
